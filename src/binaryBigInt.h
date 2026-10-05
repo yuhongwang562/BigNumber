@@ -26,6 +26,11 @@ public:
     uint64_t bit_length() const;
     uint64_t limb() const;
     bool is_zero() const;
+    bool is_negative() const;
+
+    // TODO: 完成左移右移運算子
+    BinaryBigInt operator<<(uint32_t num);
+    BinaryBigInt operator>>(uint32_t num);
 
     BinaryBigInt operator+(const BinaryBigInt& other);
     BinaryBigInt operator-(const BinaryBigInt& other);
