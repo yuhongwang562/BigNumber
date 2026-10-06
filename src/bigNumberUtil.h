@@ -19,7 +19,7 @@
 */
 std::vector<uint32_t> binaryStr_to_uint32arr(const std::string& binaryStr);
 std::vector<uint32_t> decimalStr_to_uint32arr(const std::string& decimalStr);
-std::vector<uint32_t> HexStr_to_uint32arr(const std::string& HexStr);
+std::vector<uint32_t> HexStr_to_uint32arr(const std::string& hexStr);
 
 /*
     將 uint32_t 陣列轉為對應 base 進制下的字串
