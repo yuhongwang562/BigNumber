@@ -3,6 +3,7 @@
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
+#include <iostream>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -10,7 +11,7 @@
 #define UINT32_BITLEN 32
 
 bool is_binaryStr_valid(const std::string& binaryStr) {
-    if(binaryStr.empty() || binaryStr[0] == '0')
+    if(binaryStr.empty() || (binaryStr.size() > 1 && binaryStr[0] == '0'))
         return false;
 
     for(const auto& c : binaryStr) 
@@ -20,7 +21,7 @@ bool is_binaryStr_valid(const std::string& binaryStr) {
 }
 
 bool is_decimalStr_valid(const std::string& decimalStr) {
-    if(decimalStr.empty() || decimalStr[0] == '0')
+    if(decimalStr.empty() || (decimalStr.size() > 1 && decimalStr[0] == '0'))
         return false;
 
     for(const auto& c : decimalStr)
@@ -30,7 +31,7 @@ bool is_decimalStr_valid(const std::string& decimalStr) {
 }
 
 bool is_hexStr_valid(const std::string& hexStr) {
-    if(hexStr.empty() || hexStr[0] == '0')
+    if(hexStr.empty() || (hexStr.size() > 1 && hexStr[0] == '0'))
         return false;
 
     for(const auto& c : hexStr)
@@ -202,30 +203,24 @@ int compare_magnitude(const std::vector<uint32_t>& a, const std::vector<uint32_t
             return 1;
         if(a[i] < b[i])
             return -1;
+        if(i == 0) break;
     }
     return 0;
 }
 
 void add_magnitude(std::vector<uint32_t>& result, const std::vector<uint32_t>& a, const std::vector<uint32_t>& b) {
-    size_t min_size = std::max(a.size(), b.size());
+    size_t min_size = std::min(a.size(), b.size());
+    size_t max_size = std::max(a.size(), b.size());
     if(&result == &a || &result == &b) {
-        std::vector<uint32_t> temp(min_size + 1, 0);
+        std::vector<uint32_t> temp(max_size + 1, 0);
         size_t index = 0;
         uint64_t base = 1ULL << 32;
-        for(index = 0; index < min_size; index++) {
-            uint64_t tmp = a[index] + b[index];
-            temp[index] += (tmp % base);
-            temp[index + 1] += (tmp / base);
-        }
-
-        while(index < a.size()) {
-            temp[index] += a[index];
-            index++;
-        }
-
-        while(index < b.size()) {
-            temp[index] += b[index];
-            index++;
+        for(index = 0; index < max_size; index++) {
+            uint64_t tmp = temp[index];
+            if(index < a.size()) tmp += static_cast<uint64_t>(a[index]);
+            if(index < b.size()) tmp += static_cast<uint64_t>(b[index]);
+            temp[index] = tmp % base;
+            temp[index + 1] = tmp / base;
         }
 
         trim(temp);
@@ -235,21 +230,14 @@ void add_magnitude(std::vector<uint32_t>& result, const std::vector<uint32_t>& a
 
     size_t index = 0;
     uint64_t base = 1ULL << 32;
-    result.resize(min_size + 1);
-    for(index = 0; index < min_size; index++) {
-        uint64_t tmp = a[index] + b[index];
-        result[index] += (tmp % base);
-        result[index + 1] += (tmp / base);
-    }
+    result.assign(max_size + 1, 0);
 
-    while(index < a.size()) {
-        result[index] += a[index];
-        index++;
-    }
-
-    while(index < b.size()) {
-        result[index] += b[index];
-        index++;
+    for(index = 0; index < max_size; index++) {
+        uint64_t tmp = result[index];
+        if(index < a.size()) tmp += static_cast<uint64_t>(a[index]);
+        if(index < b.size()) tmp += static_cast<uint64_t>(b[index]);
+        result[index] = tmp % base;
+        result[index + 1] = tmp / base;
     }
 
     trim(result);
@@ -257,11 +245,16 @@ void add_magnitude(std::vector<uint32_t>& result, const std::vector<uint32_t>& a
 }
 
 int main() {
-    std::string s;
-    std::cin>>s;
+    std::string a, b;
+    std::cin>>a>>b;
 
-    std::vector<uint32_t> arr = HexStr_to_uint32arr(s);
-    std::string res = uint32arr_to_decimalStr(arr);
+    std::vector<uint32_t> n1 = decimalStr_to_uint32arr(a);
+    std::vector<uint32_t> n2 = decimalStr_to_uint32arr(b);
 
-    std::cout<<res;
+    assert(uint32arr_to_decimalStr(n1) == a && uint32arr_to_decimalStr(n2) == b);
+
+    std::cout<<compare_magnitude(n1, n2)<<std::endl;
+    std::vector<uint32_t> res;
+    add_magnitude(n1, n1, n2);
+    std::cout<<uint32arr_to_decimalStr(n1)<<std::endl;
 }
