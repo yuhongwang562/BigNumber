@@ -77,33 +77,12 @@ bool BinaryBigInt::is_zero() const {
     return false;
 }
 
+bool BinaryBigInt::is_negative() const {
+    return !sign;
+}
+
 BinaryBigInt BinaryBigInt::operator+(const BinaryBigInt& other) {    
-    BinaryBigInt result;
-    uint64_t max_size = std::max(digits.size(), other.digits.size());
-    uint64_t min_size = std::min(digits.size(), other.digits.size());
-    result.digits.resize(max_size + 1, 0);
-
-    uint64_t temp = 0ULL;
-    uint64_t base = 1ULL << 32;
-    uint64_t i = 0;
-    for(i = 0; i < min_size; i++) {
-        temp = result.digits[i] + digits[i] + other.digits[i];
-        if(temp >= base)
-            result.digits[i+1] += 1;
-        result.digits[i] %= base;
-    }
-
-    while(digits.size() > min_size) {
-        result.digits[i] += digits[i];
-        i++;
-    }
-
-    while(other.digits[i] > min_size) {
-        result.digits[i] += other.digits[i];
-        i++;
-    }
-
-    return result;
+    
 }
 
 bool BinaryBigInt::operator>(const BinaryBigInt& other) {
@@ -127,7 +106,10 @@ bool BinaryBigInt::operator>(const BinaryBigInt& other) {
     }
 
     bool is_equal = true;
-    for(uint64_t i = digits.size() - 1; i >= 0; i--) {
+    
+    // 若 i 為 uint32_t ， i = 0, i-- -> i = 2^32 - 1 and i > digit.size()
+    // 所以 i 改為 int64_t;
+    for(int64_t i = static_cast<int64_t>(digits.size() - 1); i >= 0; i--) {
         // 處理同號時，正負號各自情況
         if(digits[i] < other.digits[i]) {
             if(sign == true) return false;
@@ -157,7 +139,7 @@ bool BinaryBigInt::operator==(const BinaryBigInt& other) {
     if(bit_len != obit_len)
         return false;
 
-    for(uint64_t i = 0; i < digits.size(); i++) {
+    for(uint32_t i = 0; i < digits.size(); i++) {
         if(digits[i] != other.digits[i])
             return false;
     }
@@ -185,5 +167,8 @@ std::ostream& operator<<(std::ostream& os, const BinaryBigInt& bigInt) {
 }
 
 std::string to_string(const BinaryBigInt& bigInt) {
-    return uint32arr_to_decimalStr(bigInt.digits);
+    std::string res = uint32arr_to_decimalStr(bigInt.digits);
+    if(bigInt.sign == false)
+        return "-" + res;
+    return res;
 }
