@@ -3,8 +3,6 @@
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
-#include <iostream>
-#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -166,29 +164,32 @@ std::vector<uint32_t> HexStr_to_uint32arr(const std::string& hexStr) {
     return arr;
 }
 
-std::string uint32arr_to_decimalStr(std::vector<uint32_t> arr) {
+std::string uint32arr_to_BaseStr(std::vector<uint32_t> arr, int base) {
+    assert(base >= 2 && base <= 16);
+
     if(arr.size() == 1 && arr[0] == 0)
         return "0";
 
     std::string res = "";
-
-    uint64_t base = 1ULL << UINT32_BITLEN;
+    uint64_t BASE = 1ULL << UINT32_BITLEN;
     bool flag = false;
     while(!flag) {
         flag = true;
-        uint64_t temp = 0ULL;
+        uint64_t tmp = 0ULL;
         for(size_t i = arr.size() - 1; i >= 0; i--) {
-            temp = temp * base + arr[i];
-            arr[i] = temp / 10;
-            temp = temp % 10;
-
+            tmp = tmp * BASE + arr[i];
+            arr[i] = tmp / base;
+            tmp = tmp % base;
+            
             if(arr[i] != 0) flag = false;
             if(i == 0) break;
         }
-        res += std::to_string(temp);
+        if(tmp <= 9)
+            res += std::to_string(tmp);
+        else
+            res += static_cast<char>('a' + tmp - 10);
     }
     std::reverse(res.begin(), res.end());
-
     return res;
 }
 
@@ -244,17 +245,69 @@ void add_magnitude(std::vector<uint32_t>& result, const std::vector<uint32_t>& a
     return;
 }
 
-int main() {
-    std::string a, b;
-    std::cin>>a>>b;
+void sub_magnitude(std::vector<uint32_t>& result, const std::vector<uint32_t>& a, const std::vector<uint32_t>& b) {
+    if(&result == &a || &result == &b) {
+        std::vector<uint32_t> temp(a.size(), 0);
+        uint64_t base = 1ULL << 32;
+        int borrow = 0;
+        for(size_t i = 0; i < a.size(); i++) {
+            uint64_t tmp = a[i];
+            if(borrow == 1) {
+                if(tmp == 0) {
+                    borrow = 1;
+                    tmp = base - 1ULL;
+                }
+                else {
+                    borrow = 0;
+                    tmp -= 1;
+                }
+            }
 
-    std::vector<uint32_t> n1 = decimalStr_to_uint32arr(a);
-    std::vector<uint32_t> n2 = decimalStr_to_uint32arr(b);
+            if(i >= b.size()) {
+                temp[i] = tmp;
+            }
+            else {
+                if(tmp < b[i]) {
+                    borrow = 1;
+                    tmp += base;
+                }
+                
+                temp[i] = tmp - b[i];
+            }
+        }
+        trim(temp);
+        result = std::move(temp);
+        return;
+    }
 
-    assert(uint32arr_to_decimalStr(n1) == a && uint32arr_to_decimalStr(n2) == b);
+    uint64_t base = 1ULL << 32;
+    int borrow = 0;
+    result.assign(a.size(), 0);
+    for(size_t i = 0; i < a.size(); i++) {
+        uint64_t tmp = a[i];
+        if(borrow == 1) {
+            if(tmp == 0) {
+                borrow = 1;
+                tmp = base - 1ULL;
+            }
+            else {
+                borrow = 0;
+                tmp -= 1;
+            }
+        }
 
-    std::cout<<compare_magnitude(n1, n2)<<std::endl;
-    std::vector<uint32_t> res;
-    add_magnitude(n1, n1, n2);
-    std::cout<<uint32arr_to_decimalStr(n1)<<std::endl;
+        if(i >= b.size()) {
+            result[i] = tmp;
+        }
+        else {
+            if(tmp < b[i]) {
+                borrow = 1;
+                tmp += base;
+            }
+
+            result[i] = tmp - b[i];
+        }
+    }
+    trim(result);
+    return;
 }
