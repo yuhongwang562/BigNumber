@@ -16,6 +16,7 @@ private:
     void trim();
     void consturct_by_binaryStr(const std::string& binaryStr);
     void consturct_by_decimalStr(const std::string& decimalStr);
+    void construct_by_HexStr(const std::string& HexStr);
 
 public:
     BinaryBigInt();

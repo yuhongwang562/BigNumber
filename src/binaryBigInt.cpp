@@ -1,8 +1,12 @@
 #include "./binaryBigInt.h"
 #include "./bigNumberUtil.h"
 #include <algorithm>
+#include <cassert>
+#include <cctype>
+#include <cstddef>
 #include <cstdint>
 #include <ostream>
+#include <stdexcept>
 #include <string>
 
 void BinaryBigInt::trim() {
@@ -15,39 +19,170 @@ void BinaryBigInt::trim() {
 }
 
 void BinaryBigInt::consturct_by_binaryStr(const std::string& binaryStr) {
-    sign = true;
-    digits = binaryStr_to_uint32arr(binaryStr);
+    sign = binaryStr[0] == '+'? true: false;
+
+    digits = binaryStr_to_uint32arr(binaryStr.substr(1));
     trim();
 }
 
 void BinaryBigInt::consturct_by_decimalStr(const std::string& decimalStr) {
-    if(decimalStr[0] == '-')
-        sign = false;
-    else
-        sign = true;
+    sign = decimalStr[0] == '+'? true: false;
 
-    if(decimalStr[0] == '-' || decimalStr[0] == '+')
-        digits = decimalStr_to_uint32arr(decimalStr.substr(1));
-    else
-        digits = decimalStr_to_uint32arr(decimalStr);
+    digits = decimalStr_to_uint32arr(decimalStr.substr(1));
+    trim();
+}
+
+void BinaryBigInt::construct_by_HexStr(const std::string& HexStr) {
+    sign = HexStr[0] == '+'? true: false;
+
+    digits = HexStr_to_uint32arr(HexStr.substr(1));
     trim();
 }
 
 
 BinaryBigInt::BinaryBigInt(): sign(true), digits(1, 0) {}
 
-bool is_binaryStr(const std::string& numberStr) {
-    if(numberStr[0] == '0' && numberStr[1] == 'x')
-        return true;
-    return false;
+std::string trim_str(const std::string& numberStr) {
+    assert(!numberStr.empty() && (numberStr[0] == '+' || numberStr[0] == '-'));
+
+    std::string res = "";
+    res += numberStr[0];
+    bool flag = false;
+    for(size_t i = 1; i < numberStr.size(); i++) {
+        if(numberStr[i] != '0')
+            flag = true;
+
+        if(flag == true)
+            res += numberStr[i];
+    }
+    if(res.size() == 1)
+        res += '0';
+    return res;
+}
+
+std::string binaryStr(const std::string& numberStr) {
+    assert(!numberStr.empty());
+
+    if(numberStr.size() > 2 && numberStr[0] == '0' && numberStr[1] == 'b') {
+        std::string res = "+";
+        for(size_t i = 2; i < numberStr.size(); i++) {
+            if(numberStr[i] == '0' || numberStr[i] == '1')
+                res += numberStr[i];
+            else
+                return "";
+        }
+        return trim_str(res);
+    }
+    else if(numberStr.size() > 3 && (numberStr[0] == '-' || numberStr[0] == '+')
+            && numberStr[1] == '0' && numberStr[2] == 'b')
+    {
+        std::string res = "";
+        res += numberStr[0];
+        for(size_t i = 3; i < numberStr.size(); i++) {
+            if(numberStr[i] == '0' || numberStr[i] == '1')
+                res += numberStr[i];
+            else
+                return "";
+        }
+        return trim_str(res);;
+    }
+    else {
+        return "";
+    }
+    return "";
+}
+
+std::string HexStr(const std::string& numberStr) {
+    assert(!numberStr.empty());
+
+    if(numberStr.size() > 2 && numberStr[0] == '0' && numberStr[1] == 'x') {
+        std::string res = "+";
+        for(size_t i = 2; i < numberStr.size(); i++) {
+            if(
+                (numberStr[i] >= '0' && numberStr[i] <= '9') ||
+                (numberStr[i] >= 'a' && numberStr[i] <= 'f') ||
+                (numberStr[i] >= 'A' && numberStr[i] <= 'F')
+            )
+                res += std::tolower(numberStr[i]);
+            else
+                return "";
+        }
+        return trim_str(res);
+    }
+    else if(numberStr.size() > 3 && (numberStr[0] == '-' || numberStr[0] == '+')
+            && numberStr[1] == '0' && numberStr[2] == 'x')
+    {
+        std::string res = "";
+        res += numberStr[0];
+        for(size_t i = 3; i < numberStr.size(); i++) {
+            if(
+                (numberStr[i] >= '0' && numberStr[i] <= '9') ||
+                (numberStr[i] >= 'a' && numberStr[i] <= 'f') ||
+                (numberStr[i] >= 'A' && numberStr[i] <= 'F')
+            )
+                res += std::tolower(numberStr[i]);
+            else
+                return "";
+        }
+        return trim_str(res);;
+    }
+    else {
+        return "";
+    }
+    return "";
+}
+
+std::string DecimalStr(const std::string& numberStr) {
+    assert(!numberStr.empty());
+
+    if(numberStr[0] == '+' || numberStr[0] == '-') {
+        std::string res = "";
+        res += numberStr[0];
+        for(size_t i = 1; i < numberStr.size(); i++) {
+            if(numberStr[i] >= '0' && numberStr[i] <= '9')
+                res += numberStr[i];
+            else
+                return "";
+        }
+        return trim_str(res);
+    }
+    else {
+        std::string res = "+";
+        for(size_t i = 0; i < numberStr.size(); i++) {
+            if(numberStr[i] >= '0' && numberStr[i] <= '9')
+                res += numberStr[i];
+            else
+                return "";
+        }
+        return trim_str(res);
+    }
+    return "";
 }
 
 BinaryBigInt::BinaryBigInt(const std::string& numberStr) {
-    if(is_binaryStr(numberStr)) {
-        BinaryBigInt::consturct_by_binaryStr(numberStr.substr(2));
+    if(numberStr.empty())
+        throw std::runtime_error("numberStr: " + numberStr + "is not valid");
+
+    std::string str;
+    str = binaryStr(numberStr);
+    if(str != "") {
+        consturct_by_binaryStr(str);
+        return;
     }
-    else
-        BinaryBigInt::consturct_by_decimalStr(numberStr);
+    
+    str = HexStr(numberStr);
+    if(str != "") {
+        construct_by_HexStr(str);
+        return;
+    }
+
+    str = DecimalStr(numberStr);
+    if(str != "") {
+        consturct_by_decimalStr(str);
+        return;
+    }
+
+    throw std::runtime_error("numberStr: " + numberStr + "is not valid");
 }
 
 BinaryBigInt::BinaryBigInt(const char* c_str): BinaryBigInt(std::string(c_str)) {}
@@ -79,10 +214,6 @@ bool BinaryBigInt::is_zero() const {
 
 bool BinaryBigInt::is_negative() const {
     return !sign;
-}
-
-BinaryBigInt BinaryBigInt::operator+(const BinaryBigInt& other) {    
-    
 }
 
 bool BinaryBigInt::operator>(const BinaryBigInt& other) {
@@ -162,12 +293,12 @@ bool BinaryBigInt::operator<=(const BinaryBigInt& other) {
 std::ostream& operator<<(std::ostream& os, const BinaryBigInt& bigInt) {
     if(bigInt.sign == false)
         os << "-";
-    os << uint32arr_to_decimalStr(bigInt.digits);
+    os << uint32arr_to_BaseStr(bigInt.digits, 10);
     return os;
 }
 
 std::string to_string(const BinaryBigInt& bigInt) {
-    std::string res = uint32arr_to_decimalStr(bigInt.digits);
+    std::string res = uint32arr_to_BaseStr(bigInt.digits, 10);
     if(bigInt.sign == false)
         return "-" + res;
     return res;
